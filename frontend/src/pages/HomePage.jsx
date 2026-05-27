@@ -38,7 +38,7 @@ export default function HomePage() {
     }).catch(() => {});
   }, []);
 
-  const hero = featured[0] || blogs[0];
+  const hero = featured?.[0] || blogs?.[0];
 
   return (
     <PageTransition>
