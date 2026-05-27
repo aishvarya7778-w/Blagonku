@@ -9,9 +9,11 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    server = app.listen(env.port, () => {
-      console.log(`Blagonku API running on port ${env.port}`);
-    });
+    const PORT = process.env.PORT || env.port || 5000;
+
+server = app.listen(PORT, () => {
+  console.log(`Blagonku API running on port ${PORT}`);
+});
   } catch (error) {
     console.error("Failed to start server:", error.message);
     process.exit(1);
