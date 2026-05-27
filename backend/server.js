@@ -30,15 +30,3 @@ process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
   process.exit(1);
 });
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://blagonku-sbfv.vercel.app/"
-    ],
-    credentials: true,
-  })
-);
-app.get("/", (req, res) => {
-  res.send("Backend is running");
-});
