@@ -30,3 +30,12 @@ process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
   process.exit(1);
 });
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://yourfrontend.vercel.app"
+    ],
+    credentials: true,
+  })
+);

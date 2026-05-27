@@ -6,3 +6,9 @@ backend/.env
 frontend/.env
 npm-debug.log*
 .DS_Store
+node_modules
+.env
+dist
+build
+coverage
+.DS_Store
