@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     api
-      .post("/auth/refresh")
+      .post("api/auth/refresh")
       .then((data) => {
         setAccessToken(data.accessToken);
         setUser(data.user);
