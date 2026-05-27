@@ -34,8 +34,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://yourfrontend.vercel.app"
+      "https://blagonku-sbfv.vercel.app/"
     ],
     credentials: true,
   })
 );
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
