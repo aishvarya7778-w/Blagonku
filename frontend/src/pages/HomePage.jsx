@@ -10,6 +10,7 @@ import useDebounce from "../hooks/useDebounce.js";
 import { api } from "../services/api.js";
 
 const categories = ["All", "Cosmology", "Mars Exploration", "Black Holes", "Exoplanets", "AI & Space"];
+const asArray = (value) => (Array.isArray(value) ? value : []);
 
 export default function HomePage() {
   const [blogs, setBlogs] = useState([]);
@@ -27,15 +28,19 @@ export default function HomePage() {
     setLoading(true);
     api
       .get(`/blogs?${params}`)
-      .then((res) => setBlogs(res.data))
+      .then((res) => setBlogs(asArray(res?.data)))
+      .catch(() => setBlogs([]))
       .finally(() => setLoading(false));
   }, [debouncedQuery, category]);
 
   useEffect(() => {
     Promise.all([api.get("/blogs/featured"), api.get("/blogs/trending")]).then(([featuredRes, trendingRes]) => {
-      setFeatured(featuredRes.data);
-      setTrending(trendingRes.data);
-    }).catch(() => {});
+      setFeatured(asArray(featuredRes?.data));
+      setTrending(asArray(trendingRes?.data));
+    }).catch(() => {
+      setFeatured([]);
+      setTrending([]);
+    });
   }, []);
 
   const hero = featured?.[0] || blogs?.[0];
@@ -83,12 +88,12 @@ export default function HomePage() {
         ))}
       </div>
 
-      {featured.length > 1 && (
+      {featured?.length > 1 && (
         <section className="mb-12">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold text-white">Featured signals</h2>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{featured.slice(1, 4).map((blog) => <BlogCard blog={blog} compact key={blog._id} />)}</div>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{featured?.slice(1, 4)?.map((blog) => <BlogCard blog={blog} compact key={blog._id} />)}</div>
         </section>
       )}
 
@@ -96,12 +101,12 @@ export default function HomePage() {
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-2xl font-semibold text-white">Latest launches</h2>
         </div>
-        {loading ? <SkeletonGrid /> : blogs.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{blogs.map((blog) => <BlogCard blog={blog} key={blog._id} />)}</div> : <EmptyState />}
+        {loading ? <SkeletonGrid /> : blogs?.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{blogs?.map((blog) => <BlogCard blog={blog} key={blog._id} />)}</div> : <EmptyState />}
       </section>
 
       <section>
         <h2 className="mb-5 flex items-center gap-2 font-display text-2xl font-semibold text-white"><TrendingUp className="h-5 w-5 text-flare" /> Trending orbits</h2>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{trending.map((blog) => <BlogCard blog={blog} compact key={blog._id} />)}</div>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{trending?.map((blog) => <BlogCard blog={blog} compact key={blog._id} />)}</div>
       </section>
 
       <section className="my-12 overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-aurora/15 via-white/[0.06] to-flare/10 p-8 shadow-glow">

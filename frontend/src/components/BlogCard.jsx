@@ -8,11 +8,12 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../services/api.js";
 import { getId, includesId } from "../utils/ids.js";
 import { shareBlog } from "../utils/share.js";
+const asArray = (value) => (Array.isArray(value) ? value : []);
 
 function BlogCard({ blog, compact = false }) {
   const { user, syncBookmarks } = useAuth();
   const image = blog.coverImage?.url || fallback;
-  const [likes, setLikes] = useState(blog.likes || []);
+  const [likes, setLikes] = useState(asArray(blog?.likes));
   const [liked, setLiked] = useState(() => includesId(blog.likes, user?._id));
   const [bookmarked, setBookmarked] = useState(() => includesId(user?.bookmarks, blog._id));
   const [busy, setBusy] = useState({ like: false, bookmark: false });
@@ -29,7 +30,7 @@ function BlogCard({ blog, compact = false }) {
     if (!user) return toast.error("Login to like posts");
     if (busy.like) return;
 
-    const previousLikes = likes;
+    const previousLikes = asArray(likes);
     const previousLiked = liked;
     const optimisticLikes = liked ? likes.filter((id) => getId(id) !== user._id) : [...likes, user._id];
     setLiked(!liked);
@@ -39,7 +40,7 @@ function BlogCard({ blog, compact = false }) {
     try {
       const res = await api.post(`/blogs/${blog._id}/like`);
       setLiked(res.liked);
-      setLikes(res.likes || Array.from({ length: res.likesCount }));
+      setLikes(asArray(res?.likes));
     } catch (error) {
       setLiked(previousLiked);
       setLikes(previousLikes);
@@ -62,7 +63,7 @@ function BlogCard({ blog, compact = false }) {
     try {
       const res = await api.post(`/users/bookmarks/${blog._id}`);
       setBookmarked(res.bookmarked);
-      syncBookmarks(res.bookmarks);
+      syncBookmarks(asArray(res?.bookmarks));
       toast.success(res.bookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
     } catch (error) {
       setBookmarked(previous);
@@ -105,7 +106,7 @@ function BlogCard({ blog, compact = false }) {
           <span>{blog.author?.username || "Blagonku"}</span>
           <span className="flex items-center gap-2">
             <button className={`micro-action ${liked ? "micro-action-liked" : ""}`} onClick={toggleLike} aria-label="Like post" disabled={busy.like}>
-              <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} /> {likes.length || 0}
+              <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} /> {likes?.length || 0}
             </button>
             <span className="flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {blog.commentsCount || 0}</span>
             <button className={`micro-action ${bookmarked ? "micro-action-saved" : ""}`} onClick={toggleBookmark} aria-label="Bookmark post" disabled={busy.bookmark}>

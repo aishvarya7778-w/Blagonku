@@ -7,21 +7,23 @@ import { api } from "../services/api.js";
 import { getId, includesId } from "../utils/ids.js";
 
 const countComments = (items = []) =>
-  items.reduce((total, item) => total + 1 + countComments(item.replies || []), 0);
+  (Array.isArray(items) ? items : []).reduce((total, item) => total + 1 + countComments(item.replies || []), 0);
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
 
 const updateCommentInTree = (items, id, updater) =>
-  items.map((item) => {
+  asArray(items).map((item) => {
     if (item._id === id) return updater(item);
     return { ...item, replies: updateCommentInTree(item.replies || [], id, updater) };
   });
 
 const removeCommentFromTree = (items, id) =>
-  items
+  asArray(items)
     .filter((item) => item._id !== id)
     .map((item) => ({ ...item, replies: removeCommentFromTree(item.replies || [], id) }));
 
 const addReplyToTree = (items, parentId, reply) =>
-  items.map((item) => {
+  asArray(items).map((item) => {
     if (item._id === parentId) return { ...item, replies: [...(item.replies || []), reply] };
     return { ...item, replies: addReplyToTree(item.replies || [], parentId, reply) };
   });
@@ -39,7 +41,7 @@ export default function CommentsSection({ blogId }) {
     setError("");
     api
       .get(`/comments/${blogId}`)
-      .then((res) => setComments(res.data || []))
+      .then((res) => setComments(asArray(res?.data)))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -69,9 +71,9 @@ export default function CommentsSection({ blogId }) {
 
     try {
       const res = await api.post(`/comments/${blogId}`, { content: temp.content });
-      setComments((current) => current.map((item) => (item._id === temp._id ? res.data : item)));
+      setComments((current) => asArray(current).map((item) => (item._id === temp._id ? res.data : item)));
     } catch (err) {
-      setComments((current) => current.filter((item) => item._id !== temp._id));
+      setComments((current) => asArray(current).filter((item) => item._id !== temp._id));
       toast.error(err.message);
     } finally {
       setSubmitting(false);
@@ -105,13 +107,13 @@ export default function CommentsSection({ blogId }) {
 
       {loading ? <CommentSkeleton /> : null}
       {error && !loading ? <div className="glass-card p-6 text-center text-slate-400">{error}</div> : null}
-      {!loading && !error && comments.length === 0 ? (
+      {!loading && !error && comments?.length === 0 ? (
         <div className="glass-card p-8 text-center text-slate-400">No comments yet. Start the first signal.</div>
       ) : null}
 
       <AnimatePresence initial={false}>
         <div className="space-y-3">
-          {comments.map((comment) => (
+          {comments?.map((comment) => (
             <CommentItem
               comment={comment}
               depth={0}
@@ -137,7 +139,7 @@ const CommentItem = memo(function CommentItem({ comment, depth, onUpdated, onDel
   const [replyDraft, setReplyDraft] = useState("");
   const canModify = user && (user.role === "admin" || getId(comment.user) === user._id);
   const liked = includesId(comment.likes, user?._id);
-  const replies = comment.replies || [];
+  const replies = asArray(comment?.replies);
 
   const avatar = comment.user?.profileImage?.url;
   const initials = (comment.user?.username || "U").slice(0, 2).toUpperCase();
@@ -170,12 +172,12 @@ const CommentItem = memo(function CommentItem({ comment, depth, onUpdated, onDel
 
   const like = async () => {
     if (!user) return toast.error("Login to like comments");
-    const previous = comment.likes || [];
+    const previous = asArray(comment?.likes);
     const nextLikes = liked ? previous.filter((id) => getId(id) !== user._id) : [...previous, user._id];
     onUpdated(comment._id, (item) => ({ ...item, likes: nextLikes }));
     try {
       const res = await api.post(`/comments/${comment._id}/like`);
-      onUpdated(comment._id, (item) => ({ ...item, likes: res.likes || nextLikes }));
+      onUpdated(comment._id, (item) => ({ ...item, likes: asArray(res?.likes).length ? asArray(res?.likes) : nextLikes }));
     } catch (err) {
       onUpdated(comment._id, (item) => ({ ...item, likes: previous }));
       toast.error(err.message);
@@ -275,7 +277,7 @@ const CommentItem = memo(function CommentItem({ comment, depth, onUpdated, onDel
 
       {!collapsed && replies.length > 0 && (
         <div className="mt-3 space-y-3">
-          {replies.map((reply) => (
+          {replies?.map((reply) => (
             <CommentItem comment={reply} depth={depth + 1} key={reply._id} onUpdated={onUpdated} onDeleted={onDeleted} onReply={onReply} onReload={onReload} />
           ))}
         </div>

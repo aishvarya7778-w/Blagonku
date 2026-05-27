@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import PageTransition from "../components/PageTransition.jsx";
 import { api } from "../services/api.js";
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
 export default function AdminPage() {
   const [dashboard, setDashboard] = useState(null);
   const [users, setUsers] = useState([]);
@@ -12,8 +14,11 @@ export default function AdminPage() {
   const load = () => {
     Promise.all([api.get("/admin/dashboard"), api.get("/admin/users?limit=12"), api.get("/admin/blogs?limit=12")]).then(([dash, userRes, blogRes]) => {
       setDashboard(dash);
-      setUsers(userRes.data);
-      setBlogs(blogRes.data);
+      setUsers(asArray(userRes?.data));
+      setBlogs(asArray(blogRes?.data));
+    }).catch(() => {
+      setUsers([]);
+      setBlogs([]);
     });
   };
 
@@ -52,7 +57,7 @@ export default function AdminPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Users">
-          {users.map((user) => (
+          {users?.map((user) => (
             <div className="row" key={user._id}>
               <div><p className="font-medium text-white">{user.username}</p><p className="text-sm text-slate-400">{user.email}</p></div>
               <button className="secondary-btn" onClick={() => suspend(user)}><Ban className="h-4 w-4" /> {user.isSuspended ? "Unsuspend" : "Suspend"}</button>
@@ -60,7 +65,7 @@ export default function AdminPage() {
           ))}
         </Panel>
         <Panel title="Blogs">
-          {blogs.map((blog) => (
+          {blogs?.map((blog) => (
             <div className="row" key={blog._id}>
               <div><p className="font-medium text-white">{blog.title}</p><p className="text-sm text-slate-400">{blog.status} · {blog.author?.username}</p></div>
               <div className="flex flex-wrap gap-2">

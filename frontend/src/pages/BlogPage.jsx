@@ -13,6 +13,8 @@ import fallback from "../assets/black_hole.png";
 import { getId, includesId } from "../utils/ids.js";
 import { shareBlog } from "../utils/share.js";
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
 export default function BlogPage() {
   const { slug } = useParams();
   const { user, syncBookmarks } = useAuth();
@@ -28,9 +30,10 @@ export default function BlogPage() {
     api
       .get(`/blogs/${slug}`)
       .then((res) => {
-        setBlog(res.data);
-        setRelated(res.related || []);
-        document.title = `${res.data.title} | Blagonku`;
+        const nextBlog = res?.data || null;
+        setBlog(nextBlog ? { ...nextBlog, likes: asArray(nextBlog.likes) } : null);
+        setRelated(asArray(res?.related));
+        if (nextBlog?.title) document.title = `${nextBlog.title} | Blagonku`;
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -40,15 +43,15 @@ export default function BlogPage() {
     if (!user) return toast.error("Login to like posts");
     if (actionLoading.like) return;
 
-    const liked = includesId(blog.likes, user._id);
-    const previous = blog.likes || [];
+    const liked = includesId(blog?.likes, user._id);
+    const previous = asArray(blog?.likes);
     const optimisticLikes = liked ? previous.filter((id) => getId(id) !== user._id) : [...previous, user._id];
     setBlog((current) => ({ ...current, likes: optimisticLikes }));
     setActionLoading((current) => ({ ...current, like: true }));
 
     try {
       const res = await api.post(`/blogs/${blog._id}/like`);
-      setBlog((current) => ({ ...current, likes: res.likes || Array.from({ length: res.likesCount }) }));
+      setBlog((current) => ({ ...current, likes: asArray(res?.likes) }));
     } catch (err) {
       setBlog((current) => ({ ...current, likes: previous }));
       toast.error(err.message);
@@ -61,8 +64,8 @@ export default function BlogPage() {
     if (!user) return toast.error("Login to bookmark posts");
     if (actionLoading.bookmark) return;
 
-    const wasBookmarked = includesId(user.bookmarks, blog._id);
-    const previousBookmarks = user.bookmarks || [];
+    const wasBookmarked = includesId(user?.bookmarks, blog._id);
+    const previousBookmarks = asArray(user?.bookmarks);
     const optimisticBookmarks = wasBookmarked
       ? previousBookmarks.filter((id) => getId(id) !== blog._id)
       : [...previousBookmarks, blog._id];
@@ -70,7 +73,7 @@ export default function BlogPage() {
     setActionLoading((current) => ({ ...current, bookmark: true }));
     try {
       const res = await api.post(`/users/bookmarks/${blog._id}`);
-      syncBookmarks(res.bookmarks);
+      syncBookmarks(asArray(res?.bookmarks));
       toast.success(res.bookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
     } catch (err) {
       syncBookmarks(previousBookmarks);
@@ -92,7 +95,7 @@ export default function BlogPage() {
   if (error) return <div className="glass-card p-10 text-center text-slate-300">{error}</div>;
   if (!blog) return null;
 
-  const liked = includesId(blog.likes, user?._id);
+  const liked = includesId(blog?.likes, user?._id);
   const bookmarked = includesId(user?.bookmarks, blog._id);
 
   return (
@@ -130,10 +133,10 @@ export default function BlogPage() {
 
       <CommentsSection blogId={blog._id} />
 
-      {related.length > 0 && (
+      {related?.length > 0 && (
         <section className="mt-12">
           <h2 className="mb-5 font-display text-2xl font-semibold">Related posts</h2>
-          <div className="grid gap-5 md:grid-cols-3">{related.map((item) => <BlogCard blog={item} compact key={item._id} />)}</div>
+          <div className="grid gap-5 md:grid-cols-3">{related?.map((item) => <BlogCard blog={item} compact key={item._id} />)}</div>
         </section>
       )}
     </PageTransition>
