@@ -54,11 +54,11 @@ app.get("/api/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "blagonku-api" });
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/blogs", blogRoutes);
-app.use("/api/comments", commentRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/auth", authRoutes);
+app.use("/users", userRoutes);
+app.use("/blogs", blogRoutes);
+app.use("/comments", commentRoutes);
+app.use("/admin", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
